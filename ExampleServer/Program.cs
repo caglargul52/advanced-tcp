@@ -1,55 +1,43 @@
+﻿using AdvancedTCP;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Text;
+using System.Threading.Tasks;
 
-# .Net C# Advanced TCP Library
+namespace ExampleServer
+{
+    class Program
+    {
+        private static Server _server;
 
-## Features
- - End-to-end encrypted messaging (AES Algorithm)
- - Sending messages to all clients at the same time
- - Block computers with unwanted ip addresses
- - Automatic connection of clients when internet connection is disconnected and reconnect.
- - Asynchronous communication
-
-## Quick Start
-### Client.cs
         static void Main(string[] args)
         {
-            Client _client = new Client("password");
-            _client.ConnectedServer += _client_ConnectedServer;
-            _client.DisconnectedServer += _client_DisconnectedServer;
-            _client.ReceivedMessageFromServer += _client_ReceivedMessageFromServer;
-            _client.ServerIpAddress = IPAddress.Parse("127.0.0.1");
-            _client.ServerPort = 9000;
-            _client.ConnectServer();
-        }
+            try
+            {
+                _server = new Server("password");
 
-        private static void _client_ReceivedMessageFromServer(string message)
-        {
-            Console.WriteLine(message);
-        }
-
-        private static void _client_DisconnectedServer(string message)
-        {
-            Console.WriteLine(message);
-        }
-
-        private static void _client_ConnectedServer(LocalInfo info)
-        {
-            Console.WriteLine(info.pcName + " - " + info.ipAddress + ":" + info.localEndPoint + 	  " Message: Connected to Server");
-            _client.SendMessageToServer("Hello");
-        }
-
-### Server.cs
-        static void Main(string[] args)
-        {
-	            Server _server = new Server("password");
                 _server.ReceivedMessageFromClient += Server_ReceivedMessageFromClient;
                 _server.ConnectedClient += Server_ConnectedClient;
                 _server.DisconnectedClient += Server_DisconnectedClient;
+
                 _server.IpAddress = IPAddress.Parse("127.0.0.1");
                 _server.Port = 9000;
 
                 //The following computers will be thrown directly from the server when connected.
                 _server.BlockedIpList = new List<IPAddress> { IPAddress.Parse("192.168.1.5"), IPAddress.Parse("192.168.1.6") };
-                _server.StartServer();
+                bool isOpened = _server.StartServer();
+
+                if (isOpened) Console.WriteLine(_server.IpAddress + ":" + _server.Port + " - Server started...");
+                else Console.WriteLine("Failed to start server!");
+
+                Console.ReadLine();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
         }
 
         private static void Server_DisconnectedClient(ClientInfo clientInfo)
@@ -76,5 +64,5 @@
         {
             Console.WriteLine(clientInfo.pcName + " - " + clientInfo.ipAndRemoteEndPoint + " -> " + message);
         }
-
-
+    }
+}
