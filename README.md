@@ -7,6 +7,7 @@
  - Block computers with unwanted ip addresses
  - Automatic connection of clients when internet connection is disconnected and reconnect.
  - Asynchronous communication
+ - A Server / MultiClient
 
 ## Quick Start
 ### Client.cs
