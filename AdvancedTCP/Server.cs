@@ -104,6 +104,14 @@ namespace AdvancedTCP
                 return _clientList;
             }
         }
+        public void DisconnectClient(ClientInfo info)
+        {
+            MessageModel disconnectClientMessage = new MessageModel();
+            disconnectClientMessage.Type = Type.Disconnect;
+            string json = JsonConvert.SerializeObject(disconnectClientMessage);
+
+            _server.Send(info.ipAndRemoteEndPoint, ExtensionMethods.Encrypt(json, "RDeds2442"));
+        }
         public void MultiCasting(string message)
         {
             Parallel.ForEach(_clientList, async client =>

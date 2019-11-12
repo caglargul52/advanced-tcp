@@ -177,14 +177,21 @@ namespace AdvancedTCP
             info.localEndPoint = Convert.ToInt32(_client.LocalPort);
             info.pcName = Environment.MachineName;
 
-            //Client server tarafından kabul edildi.
             if (message.Type == Type.AcceptLogon)
             {
                 _isServerConnected = true;
                 ConnectedServer?.Invoke(info);
             }
 
-            // Server tarafında bloke listesinde
+            if (message.Type == Type.Disconnect)
+            {
+                _client.Dispose();
+                _client = null;
+                _flagOfThreadsBreak = true;
+                _isServerConnected = false;
+                DisconnectedServer?.Invoke("Connection disconnected by Server");
+            }
+
             if (message.Type == Type.Blocked)
             {
                 _client.Dispose();

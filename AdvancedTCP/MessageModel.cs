@@ -11,6 +11,7 @@ namespace AdvancedTCP
         ClientLogon,
         AcceptLogon,
         Blocked,
+        Disconnect,
         Message
     }
     internal class MessageModel
