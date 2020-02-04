@@ -32,9 +32,22 @@ namespace AdvancedTCP
         private Thread _threadListen;
         private bool _isServerConnected;
         private bool _flagOfThreadsBreak = true;
-        private string _key = string.Empty;
+        private string _key;
         public IPAddress ServerIpAddress { get; set; }
         public int ServerPort { get; set; }
+
+        public Client()
+        {
+            _key = null;
+            _threadListen = new Thread(ServerListen);
+            _threadListen.IsBackground = true;
+            _threadListen.Start();
+
+            _threadInternetControlListener = new Thread(InternetListen);
+            _threadInternetControlListener.IsBackground = true;
+            _threadInternetControlListener.Start();
+        }
+
         public Client(string key)
         {
             _key = key;
@@ -81,6 +94,11 @@ namespace AdvancedTCP
                 m.PcName = Environment.MachineName;
                 string json = JsonConvert.SerializeObject(m);
 
+                if (_key == null)
+                {
+                    return _client.Send(Encoding.UTF8.GetBytes(json));
+                }
+
                 return _client.Send(ExtensionMethods.Encrypt(json, _key));
             }
             catch
@@ -104,7 +122,15 @@ namespace AdvancedTCP
 
                 string json = JsonConvert.SerializeObject(message);
 
-                _client.Send(ExtensionMethods.Encrypt(json, _key));
+                if (_key == null)
+                {
+                    _client.Send(Encoding.UTF8.GetBytes(json));
+                }
+                else
+                {
+                    _client.Send(ExtensionMethods.Encrypt(json, _key));
+                }
+
             }
             catch
             {
@@ -166,7 +192,17 @@ namespace AdvancedTCP
 
         private bool MessageReceived(byte[] data)
         {
-            string receiveData = Encoding.UTF8.GetString(ExtensionMethods.Decrypt(Convert.ToBase64String(data), _key));
+            string receiveData = string.Empty;
+
+            if (_key == null)
+            {
+                 receiveData = Encoding.UTF8.GetString(data);
+            }
+            else
+            {
+                receiveData = Encoding.UTF8.GetString(ExtensionMethods.Decrypt(Convert.ToBase64String(data), _key));
+            }
+
 
             var message = JsonConvert.DeserializeObject<MessageModel>(receiveData);
 

@@ -16,7 +16,7 @@ namespace ExampleServer
         {
             try
             {
-                _server = new Server("password");
+                _server = new Server();
 
                 _server.ReceivedMessageFromClient += Server_ReceivedMessageFromClient;
                 _server.ConnectedClient += Server_ConnectedClient;

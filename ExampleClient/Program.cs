@@ -14,7 +14,7 @@ namespace ExampleClient
 
         static void Main(string[] args)
         {
-            _client = new Client("password");
+            _client = new Client();
             _client.ConnectedServer += _client_ConnectedServer;
             _client.DisconnectedServer += _client_DisconnectedServer;
             _client.ReceivedMessageFromServer += _client_ReceivedMessageFromServer;

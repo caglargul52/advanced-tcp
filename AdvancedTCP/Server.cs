@@ -57,6 +57,17 @@ namespace AdvancedTCP
             _threadListen.IsBackground = true;
             _threadListen.Start();
         }
+
+        public Server()
+        {
+            _key = null;
+            BlockedIpList = new List<IPAddress>();
+
+            _threadListen = new Thread(ClientListen);
+            _threadListen.IsBackground = true;
+            _threadListen.Start();
+        }
+
         public bool StartServer()
         {
             if (_server != null)
@@ -95,6 +106,11 @@ namespace AdvancedTCP
             m.Message = message;
             string json = JsonConvert.SerializeObject(m);
 
+            if (_key == null)
+            {
+                return _server.Send(info.ipAndRemoteEndPoint, Encoding.UTF8.GetBytes(json));
+            }
+
             return _server.Send(info.ipAndRemoteEndPoint, ExtensionMethods.Encrypt(json, _key));
         }
         public List<ClientInfo> GetClientsList()
@@ -125,7 +141,16 @@ namespace AdvancedTCP
                 string json = JsonConvert.SerializeObject(m);
 
                 if (_server != null && resultBlocked == null)
-                    await _server.SendAsync(client.ipAndRemoteEndPoint, ExtensionMethods.Encrypt(json, _key));
+                {
+                    if (_key == null)
+                    {
+                        await _server.SendAsync(client.ipAndRemoteEndPoint, Encoding.UTF8.GetBytes(json));
+                    }
+                    else
+                    {
+                        await _server.SendAsync(client.ipAndRemoteEndPoint, ExtensionMethods.Encrypt(json, _key));
+                    }
+                }          
             });
         }
 
@@ -142,10 +167,19 @@ namespace AdvancedTCP
         }
         private bool MessageReceived(string ipPort, byte[] data)
         {
-            byte[] decryptedData = ExtensionMethods.Decrypt(Convert.ToBase64String(data), _key);
-            if (decryptedData == null) return false;
+            string receiveData;
 
-            string receiveData = Encoding.UTF8.GetString(decryptedData);
+            if (_key == null)
+            {
+                receiveData = Encoding.UTF8.GetString(data);
+            }
+            else
+            {
+                byte[] decryptedData = ExtensionMethods.Decrypt(Convert.ToBase64String(data), _key);
+                if (decryptedData == null) return false;
+                receiveData = Encoding.UTF8.GetString(decryptedData);
+            }
+
             var message = JsonConvert.DeserializeObject<MessageModel>(receiveData);
 
             string[] split = ipPort.Split(':');
@@ -167,7 +201,17 @@ namespace AdvancedTCP
                     MessageModel blockedMessage = new MessageModel();
                     blockedMessage.Type = Type.Blocked;
                     string json = JsonConvert.SerializeObject(blockedMessage);
-                    _server.Send(client.ipAndRemoteEndPoint, ExtensionMethods.Encrypt(json, _key));
+
+                    if (_key == null)
+                    {
+                        _server.Send(client.ipAndRemoteEndPoint, Encoding.UTF8.GetBytes(json));
+
+                    }
+                    else
+                    {
+                        _server.Send(client.ipAndRemoteEndPoint, ExtensionMethods.Encrypt(json, _key));
+                    }
+
                     return true;
                 }
 
@@ -181,8 +225,17 @@ namespace AdvancedTCP
                         acceptMessage.Type = Type.AcceptLogon;
                         string json = JsonConvert.SerializeObject(acceptMessage);
 
-                        bool status = _server.Send(client.ipAndRemoteEndPoint, ExtensionMethods.Encrypt(json, _key));
-                        if (status) ConnectedClient?.Invoke(client);
+                        if (_key == null)
+                        {
+                            bool status = _server.Send(client.ipAndRemoteEndPoint, Encoding.UTF8.GetBytes(json));
+                            if (status) ConnectedClient?.Invoke(client);
+
+                        }
+                        else
+                        {
+                            bool status = _server.Send(client.ipAndRemoteEndPoint, ExtensionMethods.Encrypt(json, _key));
+                            if (status) ConnectedClient?.Invoke(client);
+                        }
                     }
                 }
 
